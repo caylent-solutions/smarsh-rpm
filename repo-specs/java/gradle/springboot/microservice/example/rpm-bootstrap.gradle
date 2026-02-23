@@ -44,7 +44,9 @@ project.ext.set('_rpmProp', rpmProp)
 // ---------------------------------------------------------------------------
 def rpmPackagesDir = file(packagesDir)
 if (rpmPackagesDir.exists()) {
-    rpmPackagesDir.eachDir { pkgDir ->
+    // Sort directories by name for deterministic application order
+    // (e.g., smarsh-rpm-gradle-build before smarsh-rpm-gradle-unit-test)
+    rpmPackagesDir.listFiles().findAll { it.isDirectory() }.sort { it.name }.each { pkgDir ->
         // Make package directory available to each script
         project.ext.set('_rpmCurrentPkgDir', pkgDir.absolutePath)
         // Apply all .gradle scripts in the package (sorted for deterministic order)
