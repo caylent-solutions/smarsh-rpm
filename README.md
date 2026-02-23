@@ -6,7 +6,7 @@ Centralized platform and development automation for Smarsh projects.
 
 ## What is RPM?
 
-RPM is a **DevOps Platform Dependency Manager** that brings version-controlled, reproducible automation to your projects through declarative manifests. Adapted from [Caylent's CPM](https://github.com/caylent-solutions/cpm) (Caylent Package Manager), RPM enables you to centralize, version, and share automation across your organization without replacing your existing tools.
+RPM is a **DevOps Platform Dependency Manager** that brings version-controlled, reproducible automation to your projects through declarative manifests. RPM enables you to centralize, version, and share automation across your organization without replacing your existing tools.
 
 **Solves a common problem:**
 Organizations have quality automation scattered across teams — build conventions, linting rules, security scanning, test frameworks, and local dev tooling that work well but aren't widely adopted because they're hard to discover, version, test, and distribute. RPM enables you to package this automation and share it across projects in a tested, reproducible way.
@@ -98,7 +98,7 @@ Ensure the same testing, linting, security scanning, and deployment automation a
 
 ## How It Works
 
-RPM uses [a fork of the Gerrit `repo` tool](https://github.com/caylent-solutions/git-repo) to orchestrate dependencies across Git repositories. Manifests define what to clone, where to place it, and how to wire it together. The Caylent fork provides `repo envsubst`, which resolves `${VARIABLE}` placeholders in manifest XML with values from your `.rpmenv` configuration — making manifests portable across organizations and environments.
+RPM uses [a fork of the Gerrit `repo` tool](https://github.com/caylent-solutions/git-repo) (with `envsubst` support) to orchestrate dependencies across Git repositories. Manifests define what to clone, where to place it, and how to wire it together. The `repo envsubst` command resolves `${VARIABLE}` placeholders in manifest XML with values from your `.rpmenv` configuration — making manifests portable across organizations and environments.
 
 **[Complete Technical Walkthrough ->](docs/how-it-works.md)**
 
@@ -144,7 +144,7 @@ RPM uses [a fork of the Gerrit `repo` tool](https://github.com/caylent-solutions
                                  │
                                  ▼
                    ┌────────────────────────────┐
-                   │ Caylent Gerrit `repo` Fork │
+                   │  Gerrit `repo` Tool Fork   │
                    │ (git-repo with envsubst)   │
                    │ Executes manifests, syncs  │
                    │ repos, manages workspace   │
@@ -155,4 +155,4 @@ RPM uses [a fork of the Gerrit `repo` tool](https://github.com/caylent-solutions
 
 ## License
 
-MIT
+Apache 2.0

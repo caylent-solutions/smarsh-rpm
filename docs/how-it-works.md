@@ -26,7 +26,7 @@ The `rpmConfigure` Gradle task executes at runtime (not evaluation time). It:
 
 1. **Installs asdf** — A version manager used to install Python without polluting the system
 2. **Installs Python** — Required by the `repo` tool
-3. **Installs the repo tool** — The Caylent fork, installed via `pip`
+3. **Installs the repo tool** — The RPM fork (with `envsubst` support), installed via `pip`
 4. **Runs `repo init`** — Clones the manifest repo (smarsh-rpm). At this point, `${GITBASE}` placeholders in `remote.xml` are still unresolved
 5. **Runs `repo envsubst`** — Replaces `${GITBASE}` with the actual URL from the `GITBASE` environment variable (sourced from `.rpmenv`)
 6. **Runs `repo sync`** — Clones each package repo listed in `packages.xml` to its `path` (e.g., `.packages/smarsh-rpm-gradle-checkstyle/`). Also processes `<linkfile>` entries, creating symlinks from package assets to their conventional locations in the project (e.g., `config/checkstyle/checkstyle.xml` → `.packages/smarsh-rpm-gradle-checkstyle/config/checkstyle/checkstyle.xml`)

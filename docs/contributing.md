@@ -6,7 +6,7 @@ How to create, maintain, and update RPM packages and manifests.
 
 ### Creating a New Package
 
-1. Create a new GitHub repository at `caylent-solutions/smarsh-rpm-gradle-<concern>`
+1. Create a new GitHub repository named `smarsh-rpm-gradle-<concern>`
 2. Add a `.gradle` script with your tasks and configuration
 3. If your script needs external Gradle plugins, create `rpm-manifest.properties`
 4. Add `README.md` and `CHANGELOG.md`

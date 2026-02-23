@@ -44,9 +44,7 @@ RPM is a **package manager for build tooling and project configuration** — not
 - Multiple **package repositories** ([smarsh-rpm-gradle-*](https://github.com/caylent-solutions?q=smarsh-rpm-gradle)) that each provide a focused set of Gradle tasks and configuration
 - A **bootstrap mechanism** (`rpm-bootstrap.gradle`) committed to each project that syncs packages and auto-applies them
 
-RPM is adapted from [Caylent's CPM](https://github.com/caylent-solutions/cpm) (Caylent Package Manager), which provides the same pattern for Terraform/Make projects. RPM adapts CPM's architecture for the Gradle ecosystem.
-
-Under the hood, RPM uses Google's [`repo` tool](https://gerrit.googlesource.com/git-repo) (specifically the [Caylent fork](https://github.com/caylent-solutions/git-repo) with `envsubst` support) to sync packages from Git repositories.
+Under the hood, RPM uses a [fork of Google's `repo` tool](https://github.com/caylent-solutions/git-repo) (with `envsubst` support) to sync packages from Git repositories.
 
 ---
 
@@ -72,7 +70,7 @@ When a developer runs `./gradlew rpmConfigure`, the bootstrap script executes th
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐
 │  Install asdf   │────>│  Install Python  │────>│ Install repo tool│
-│  (version mgr)  │     │  (via asdf)      │     │ (Caylent fork)   │
+│  (version mgr)  │     │  (via asdf)      │     │ (fork w/envsubst)│
 └─────────────────┘     └──────────────────┘     └──────────────────┘
                                                           │
                                                           v
@@ -175,7 +173,7 @@ REPO_MANIFESTS_PATH=repo-specs/java/gradle/springboot/microservice/meta.xml
 
 Set `GITBASE` to the GitHub organization hosting the packages:
 ```properties
-GITBASE=https://github.com/caylent-solutions/
+GITBASE=https://github.com/your-org/
 ```
 
 Set build configuration:
@@ -389,7 +387,7 @@ Register the new package in `packages.xml`:
 
 ### What It Is
 
-The [Caylent fork](https://github.com/caylent-solutions/git-repo) of Google's `repo` tool provides a `repo envsubst` command that is **not available in the upstream repo tool**. This command replaces `${VARIABLE}` placeholders in all manifest XML files under `.repo/manifests/` with values from environment variables.
+The [RPM fork](https://github.com/caylent-solutions/git-repo) of Google's `repo` tool provides a `repo envsubst` command that is **not available in the upstream repo tool**. This command replaces `${VARIABLE}` placeholders in all manifest XML files under `.repo/manifests/` with values from environment variables.
 
 ### Why It Matters
 
@@ -397,7 +395,7 @@ Without `envsubst`, the manifest `remote.xml` would need a hard-coded URL:
 
 ```xml
 <!-- WITHOUT envsubst — hard-coded, not portable -->
-<remote name="smarsh" fetch="https://github.com/caylent-solutions/"/>
+<remote name="smarsh" fetch="https://github.com/your-org/"/>
 ```
 
 With `envsubst`, the URL is a placeholder:
@@ -419,7 +417,7 @@ The bootstrap script (`rpm-bootstrap.gradle`) exports `GITBASE` from `.rpmenv` b
 
 ```groovy
 exec {
-    environment 'GITBASE', gitbase  // From .rpmenv: GITBASE=https://github.com/caylent-solutions/
+    environment 'GITBASE', gitbase  // From .rpmenv: GITBASE=https://github.com/your-org/
     commandLine 'bash', '-c', 'repo envsubst'
 }
 ```
@@ -448,7 +446,7 @@ GITBASE=https://gitlab.your-company.com/rpm-packages/
 **Same manifests everywhere:**
 The XML manifests in `smarsh-rpm` never need to change. Dev laptops, CI runners, air-gapped environments — they all use the same `remote.xml` with `fetch="${GITBASE}"`. Only the `.rpmenv` file (or environment variable) changes.
 
-For full documentation on the `envsubst` feature, see the [Caylent git-repo README](https://github.com/caylent-solutions/git-repo#environment-variable-substitution-envsubst).
+For full documentation on the `envsubst` feature, see the [git-repo fork README](https://github.com/caylent-solutions/git-repo#environment-variable-substitution-envsubst).
 
 ---
 
@@ -500,7 +498,7 @@ Binary plugins require compilation, JAR publishing, version resolution through a
 
 **Published plugins** on a plugin portal require a build pipeline for every package, a hosted plugin repository, and `pluginManagement` blocks in `settings.gradle`. This is the most infrastructure-heavy option.
 
-The **`repo` tool** provides tag-pinned synchronization of multiple Git repos into a local directory with one command (`repo sync`). The Caylent fork adds `envsubst` for URL portability. The packages are plain files on disk — no compilation, no resolution, no portal.
+The **`repo` tool** provides tag-pinned synchronization of multiple Git repos into a local directory with one command (`repo sync`). The RPM fork adds `envsubst` for URL portability. The packages are plain files on disk — no compilation, no resolution, no portal.
 
 ### Why separate repos per concern (not one monorepo)?
 
@@ -512,7 +510,7 @@ Each package has its own **versioning lifecycle**. Bumping a checkstyle rule sho
 
 ### Why envsubst (portability across organizations)?
 
-Without `envsubst`, the manifest XMLs would contain hard-coded URLs like `fetch="https://github.com/caylent-solutions/"`. Any organization wanting to use RPM would need to fork `smarsh-rpm` and change every URL in every XML file.
+Without `envsubst`, the manifest XMLs would contain hard-coded URLs like `fetch="https://github.com/your-org/"`. Any organization wanting to use RPM would need to fork `smarsh-rpm` and change every URL in every XML file.
 
 With `envsubst`, the manifests use `fetch="${GITBASE}"` and the actual URL is resolved from `.rpmenv` at configure time. Adopting RPM for a different organization means changing one line in `.rpmenv`.
 

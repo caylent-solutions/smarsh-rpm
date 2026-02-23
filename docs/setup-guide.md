@@ -31,7 +31,7 @@ Edit `.rpmenv` to match your project:
 REPO_MANIFESTS_PATH=repo-specs/java/gradle/springboot/microservice/meta.xml
 
 # Set the Git base URL where packages are hosted
-GITBASE=https://github.com/caylent-solutions/
+GITBASE=https://github.com/your-org/
 
 # Java source/target version
 JAVA_VERSION=17
