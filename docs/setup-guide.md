@@ -45,12 +45,26 @@ All `.rpmenv` values can be overridden by environment variables of the same name
 
 ### 3. Customize `build.gradle`
 
-Replace the template's project-specific section with your own:
+Replace the template's project-specific section with your own. RPM provides plugins but does NOT manage dependency versions — each project owns its version pins and BOM imports:
 
 ```groovy
 group = 'com.yourcompany'
 version = '1.0.0'
 jar { archiveFileName = "your-service.jar" }
+
+// Dependency versions and BOM imports (owned by each project, not RPM)
+ext {
+    set('springCloudVersion', '2023.0.3')
+    set('jacksonVersion', '2.17.2')
+    testcontainersVersion = '1.19.8'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "com.fasterxml.jackson:jackson-bom:${jacksonVersion}"
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'

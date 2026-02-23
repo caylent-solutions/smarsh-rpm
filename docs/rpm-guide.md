@@ -131,7 +131,7 @@ smarsh-rpm (this repo)
 
 | Package | Gradle Tasks | Config Files | Replaces |
 |---|---|---|---|
-| [smarsh-rpm-gradle-build](https://github.com/caylent-solutions/smarsh-rpm-gradle-build) | `build`, `bootJar`, `bootBuildInfo` | `build-conventions.gradle`, `rpm-manifest.properties` | Java version, Spring Boot plugin, repos, dependency management, dist task disabling |
+| [smarsh-rpm-gradle-build](https://github.com/caylent-solutions/smarsh-rpm-gradle-build) | `build`, `bootJar`, `bootBuildInfo` | `build-conventions.gradle`, `rpm-manifest.properties` | Java version, Spring Boot plugin, dependency management plugin, repository definitions |
 | [smarsh-rpm-gradle-checkstyle](https://github.com/caylent-solutions/smarsh-rpm-gradle-checkstyle) | `checkstyleMain` | `checkstyle.gradle`, `config/checkstyle/checkstyle.xml`, `config/checkstyle/suppressions.xml` | Checkstyle plugin config, checkstyle rules files |
 | [smarsh-rpm-gradle-security](https://github.com/caylent-solutions/smarsh-rpm-gradle-security) | `securityCheck`, `secretScan`, `dependencyCheckAnalyze` | `security.gradle`, `rpm-manifest.properties` | OWASP plugin config, TruffleHog local scanning via Docker |
 | [smarsh-rpm-gradle-unit-test](https://github.com/caylent-solutions/smarsh-rpm-gradle-unit-test) | `test`, `unitTest`, `jacocoTestReport` | `unit-test.gradle` | TestNG config, JaCoCo config, test logging, coverage reporting |
@@ -187,7 +187,7 @@ ARTIFACTORY_URL=https://your-company.jfrog.io/libs-release-local
 
 ### Step 3: Customize `build.gradle`
 
-Keep only project-specific configuration:
+Keep only project-specific configuration. RPM provides plugins and conventions but does NOT manage dependency versions — each project owns its own version pins and BOM imports:
 ```groovy
 buildscript {
     // ... (RPM buildscript block — copy as-is from template)
@@ -197,6 +197,20 @@ apply from: 'rpm-bootstrap.gradle'
 group = 'com.yourcompany'
 version = '1.0.0'
 jar { archiveFileName = "your-service.jar" }
+
+// Dependency versions and BOM imports (owned by each project, not RPM)
+ext {
+    set('springCloudVersion', '2023.0.3')
+    set('jacksonVersion', '2.17.2')
+    testcontainersVersion = '1.19.8'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "com.fasterxml.jackson:jackson-bom:${jacksonVersion}"
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
 
 dependencies {
     // Your application-specific dependencies only
@@ -224,21 +238,9 @@ This installs tooling and syncs all packages to `.packages/`.
 ./gradlew securityCheck             # Security scan only
 ```
 
-### Overriding Package Defaults
+### Dependency Version Management
 
-If a package sets a value you need to override for your specific project, use Gradle's `ext` block in your `build.gradle`:
-
-```groovy
-// Override a version set by the build package
-ext {
-    set('jacksonVersion', '2.18.0')  // Override the default
-}
-```
-
-Or for repository URLs, set them in `gradle.properties`:
-```properties
-rpm.artifactory.url=https://your-company.jfrog.io/libs-release-local
-```
+RPM packages provide plugins, tasks, and conventions but do NOT manage dependency versions. Each project owns its dependency version pins and BOM imports in its own `build.gradle`. This separation ensures RPM package updates cannot introduce version conflicts in consumers' dependency trees.
 
 ---
 
@@ -252,8 +254,7 @@ rpm.artifactory.url=https://your-company.jfrog.io/libs-release-local
 4. **SonarQube config** — `sonarqube {}` block (project-specific overrides can stay)
 5. **Test config** — `test {}` block with TestNG and logging config
 6. **Repository definitions** — `repositories {}` block (mavenCentral, mavenLocal, Artifactory)
-7. **Dependency management** — `dependencyManagement {}` block with BOMs
-8. **Java version** — `sourceCompatibility`/`targetCompatibility`
+7. **Java version** — `sourceCompatibility`/`targetCompatibility`
 9. **Dist task disabling** — `tasks.distTar.enabled = false`
 10. **Local dev tasks** — All Docker Compose management tasks and helpers
 11. **Security scanning config** — OWASP and TruffleHog Gradle task config (note: `.github/workflows/` files must stay in the project — GitHub Actions only reads from that path)
@@ -262,6 +263,8 @@ rpm.artifactory.url=https://your-company.jfrog.io/libs-release-local
 
 - `group` and `version`
 - `jar { archiveFileName }` if customized
+- `ext {}` block with dependency version properties
+- `dependencyManagement {}` block with BOM imports and version pins
 - `dependencies {}` block (application-specific dependencies)
 - `settings.gradle`
 - All Java source code (`src/main/java/`, `src/test/java/`)
@@ -465,7 +468,7 @@ All RPM repos are public. You can browse the actual code to understand exactly w
 
 Each package repo contains a `.gradle` script (the tasks and configuration) and optionally `rpm-manifest.properties` (external plugin dependencies) and config files.
 
-- **[smarsh-rpm-gradle-build](https://github.com/caylent-solutions/smarsh-rpm-gradle-build)** — `build-conventions.gradle` defines Java version, Spring Boot, repos, BOMs
+- **[smarsh-rpm-gradle-build](https://github.com/caylent-solutions/smarsh-rpm-gradle-build)** — `build-conventions.gradle` defines Java version, Spring Boot plugin, repository definitions
 - **[smarsh-rpm-gradle-checkstyle](https://github.com/caylent-solutions/smarsh-rpm-gradle-checkstyle)** — `checkstyle.gradle` + `config/checkstyle/checkstyle.xml` (Google Java Style)
 - **[smarsh-rpm-gradle-security](https://github.com/caylent-solutions/smarsh-rpm-gradle-security)** — `security.gradle` with OWASP + TruffleHog tasks
 - **[smarsh-rpm-gradle-unit-test](https://github.com/caylent-solutions/smarsh-rpm-gradle-unit-test)** — `unit-test.gradle` with TestNG, JaCoCo, coverage reporting

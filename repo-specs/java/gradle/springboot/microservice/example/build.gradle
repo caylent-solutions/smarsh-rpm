@@ -33,9 +33,9 @@ apply from: 'rpm-bootstrap.gradle'
 // ============================================================
 // Project-Specific Configuration
 // ============================================================
-// Everything below is unique to this project. All build tooling,
-// linting, testing, security scanning, and code quality config
-// comes from RPM packages synced to .packages/
+// Everything below is unique to this project. RPM packages provide
+// plugins, tasks, and conventions. Dependency versions and BOM
+// imports are managed here — not in RPM packages.
 // ============================================================
 
 group = 'com.example'
@@ -43,6 +43,22 @@ version = '1.0.0'
 
 jar {
     archiveFileName = "my-service.jar"
+}
+
+// Project-specific dependency versions and BOM imports
+// RPM provides plugins but does NOT manage dependency versions.
+// Each project owns its own version pins and BOM imports.
+ext {
+    set('springCloudVersion', '2023.0.3')
+    set('jacksonVersion', '2.17.2')
+    testcontainersVersion = '1.19.8'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "com.fasterxml.jackson:jackson-bom:${jacksonVersion}"
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
 }
 
 // Project-specific dependencies
