@@ -27,13 +27,25 @@ def rpmProp = { String key ->
     System.getenv(key) ?: rpmEnv.getProperty(key)
 }
 
-def packagesDir = rpmProp('PACKAGES_DIR') ?: '.packages'
-def repoUrl = rpmProp('REPO_URL')
-def repoRev = rpmProp('REPO_REV')
-def repoManifestsUrl = rpmProp('REPO_MANIFESTS_URL')
-def repoManifestsRevision = rpmProp('REPO_MANIFESTS_REVISION')
-def repoManifestsPath = rpmProp('REPO_MANIFESTS_PATH')
-def gitbase = rpmProp('GITBASE')
+// Require a property from .rpmenv (or environment override)
+def requireRpmProp = { String key ->
+    def value = rpmProp(key)
+    if (!value || value.trim().isEmpty()) {
+        throw new GradleException(
+            "RPM: Required property '${key}' is not set.\n" +
+            "Add ${key}=<value> to your .rpmenv file or set it as an environment variable."
+        )
+    }
+    return value.trim()
+}
+
+def packagesDir = requireRpmProp('PACKAGES_DIR')
+def repoUrl = requireRpmProp('REPO_URL')
+def repoRev = requireRpmProp('REPO_REV')
+def repoManifestsUrl = requireRpmProp('REPO_MANIFESTS_URL')
+def repoManifestsRevision = requireRpmProp('REPO_MANIFESTS_REVISION')
+def repoManifestsPath = requireRpmProp('REPO_MANIFESTS_PATH')
+def gitbase = requireRpmProp('GITBASE')
 
 // Expose rpmProp to package scripts so they can read .rpmenv values
 // Usage in packages: def rpmProp = project.ext.get('_rpmProp')
