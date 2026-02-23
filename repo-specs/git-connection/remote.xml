@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Shared remote definitions for RPM packages.
+    Uses ${GITBASE} placeholder resolved by 'repo envsubst' at configure time.
+    Change GITBASE in .rpmenv to point packages to a different Git host.
+-->
+<manifest>
+  <remote name="smarsh" fetch="${GITBASE}"/>
+</manifest>

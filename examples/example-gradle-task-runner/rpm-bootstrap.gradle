@@ -1,0 +1,190 @@
+// ============================================================================
+// RPM Bootstrap - Repo Package Manager for Gradle
+// ============================================================================
+// This script provides:
+//   1. Auto-discovery and application of RPM package scripts from .packages/
+//   2. rpmConfigure task: installs tooling and syncs packages from manifest repo
+//   3. rpmClean task: removes synced packages and repo metadata
+//
+// Commit this file to your project. It rarely changes.
+// Configuration lives in .rpmenv (Java properties format).
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// 1. Read .rpmenv configuration
+// ---------------------------------------------------------------------------
+def rpmEnvFile = file('.rpmenv')
+if (!rpmEnvFile.exists()) {
+    throw new GradleException("RPM: .rpmenv not found. Create it from the smarsh-rpm example.")
+}
+def rpmEnv = new Properties()
+rpmEnvFile.withInputStream { rpmEnv.load(it) }
+
+// Allow environment variables to override .rpmenv values
+def rpmProp = { String key ->
+    System.getenv(key) ?: rpmEnv.getProperty(key)
+}
+
+def packagesDir = rpmProp('PACKAGES_DIR') ?: '.packages'
+def asdfUrl = rpmProp('ASDF_URL')
+def asdfVersion = rpmProp('ASDF_VERSION')
+def asdfDirPath = rpmProp('ASDF_DIR')?.replace('${HOME}', System.getProperty('user.home'))
+def toolVersionsFile = rpmProp('TOOL_VERSIONS_FILE') ?: '.tool-versions'
+def defaultPythonVersion = rpmProp('DEFAULT_PYTHON_VERSION') ?: '3.12.9'
+def repoUrl = rpmProp('REPO_URL')
+def repoRev = rpmProp('REPO_REV')
+def repoManifestsUrl = rpmProp('REPO_MANIFESTS_URL')
+def repoManifestsRevision = rpmProp('REPO_MANIFESTS_REVISION')
+def repoManifestsPath = rpmProp('REPO_MANIFESTS_PATH')
+def gitbase = rpmProp('GITBASE')
+
+// ---------------------------------------------------------------------------
+// 2. Auto-discover and apply package scripts from .packages/
+// ---------------------------------------------------------------------------
+def rpmPackagesDir = file(packagesDir)
+if (rpmPackagesDir.exists()) {
+    rpmPackagesDir.eachDir { pkgDir ->
+        // Make package directory available to each script
+        project.ext.set('_rpmCurrentPkgDir', pkgDir.absolutePath)
+        // Apply all .gradle scripts in the package (sorted for deterministic order)
+        fileTree(pkgDir) { include '*.gradle' }.sort().each { scriptFile ->
+            apply from: scriptFile
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 3. rpmConfigure task
+// ---------------------------------------------------------------------------
+task rpmConfigure {
+    group = 'rpm'
+    description = 'Install tooling and sync RPM packages from manifest repository'
+
+    doLast {
+        // Step 1: Install asdf if not present
+        def asdfDir = file(asdfDirPath)
+        if (!asdfDir.exists()) {
+            logger.lifecycle("RPM: Installing asdf ${asdfVersion}...")
+            exec {
+                commandLine 'git', 'clone', asdfUrl, asdfDirPath, '--branch', asdfVersion
+            }
+        } else {
+            logger.lifecycle("RPM: asdf already installed at ${asdfDirPath}")
+        }
+
+        // Step 2: Ensure .tool-versions has python
+        def tvFile = file(toolVersionsFile)
+        if (!tvFile.exists()) {
+            tvFile.text = "python ${defaultPythonVersion}\n"
+            logger.lifecycle("RPM: Created ${toolVersionsFile} with python ${defaultPythonVersion}")
+        } else if (!tvFile.text.contains('python')) {
+            tvFile.append("\npython ${defaultPythonVersion}\n")
+            logger.lifecycle("RPM: Added python ${defaultPythonVersion} to ${toolVersionsFile}")
+        }
+
+        // Step 3: Install asdf plugins and tools
+        logger.lifecycle("RPM: Installing asdf plugins and tools...")
+        exec {
+            commandLine 'bash', '-c', """
+                export ASDF_DIR="${asdfDirPath}"
+                . "\${ASDF_DIR}/asdf.sh"
+                awk '{print \$1}' ${toolVersionsFile} | sort -u | while read plugin; do
+                    if ! asdf plugin list 2>/dev/null | grep -q "^\${plugin}\$"; then
+                        echo "RPM: Installing asdf plugin: \${plugin}"
+                        asdf plugin add \${plugin} || { echo "RPM: Failed to add plugin \${plugin}"; exit 1; }
+                    fi
+                done
+                asdf install || { echo "RPM: Failed to install tools"; exit 1; }
+            """.stripIndent().trim()
+        }
+
+        // Step 4: Install repo tool via pip
+        logger.lifecycle("RPM: Installing repo tool ${repoRev}...")
+        exec {
+            commandLine 'bash', '-c', """
+                export ASDF_DIR="${asdfDirPath}"
+                . "\${ASDF_DIR}/asdf.sh"
+                pip install "git+${repoUrl}@${repoRev}" || { echo "RPM: Failed to install repo tool"; exit 1; }
+                asdf reshim python
+            """.stripIndent().trim()
+        }
+
+        // Step 5: repo init (clones manifest repo with ${GITBASE} placeholders intact)
+        logger.lifecycle("RPM: Initializing repo from ${repoManifestsUrl}...")
+        exec {
+            commandLine 'bash', '-c', """
+                export ASDF_DIR="${asdfDirPath}"
+                . "\${ASDF_DIR}/asdf.sh"
+                echo n | repo --color=never init --no-repo-verify \\
+                    -u "${repoManifestsUrl}" \\
+                    -b "${repoManifestsRevision}" \\
+                    -m "${repoManifestsPath}" \\
+                    --repo-rev="${repoRev}" \\
+                    || { echo "RPM: repo init failed"; exit 1; }
+            """.stripIndent().trim()
+        }
+
+        // Step 6: repo envsubst (resolves ${GITBASE} from environment)
+        logger.lifecycle("RPM: Running repo envsubst to resolve \${GITBASE}...")
+        exec {
+            environment 'GITBASE', gitbase
+            commandLine 'bash', '-c', """
+                export ASDF_DIR="${asdfDirPath}"
+                . "\${ASDF_DIR}/asdf.sh"
+                export GITBASE="${gitbase}"
+                repo envsubst || { echo "RPM: repo envsubst failed"; exit 1; }
+            """.stripIndent().trim()
+        }
+
+        // Step 7: repo sync (clones packages using resolved URLs)
+        logger.lifecycle("RPM: Syncing packages...")
+        exec {
+            commandLine 'bash', '-c', """
+                export ASDF_DIR="${asdfDirPath}"
+                . "\${ASDF_DIR}/asdf.sh"
+                repo sync || { echo "RPM: repo sync failed"; exit 1; }
+            """.stripIndent().trim()
+        }
+
+        // Step 8: Update .gitignore
+        def gitignore = file('.gitignore')
+        def gitignoreText = gitignore.exists() ? gitignore.text : ''
+        def updated = false
+        if (!gitignoreText.contains("${packagesDir}/")) {
+            gitignoreText += "\n${packagesDir}/\n"
+            updated = true
+        }
+        if (!gitignoreText.contains('.repo/')) {
+            gitignoreText += ".repo/\n"
+            updated = true
+        }
+        if (updated) {
+            gitignore.text = gitignoreText
+            logger.lifecycle("RPM: Updated .gitignore with ${packagesDir}/ and .repo/")
+        }
+
+        logger.lifecycle("RPM: Configuration complete. Packages synced to ${packagesDir}/")
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 4. rpmClean task
+// ---------------------------------------------------------------------------
+task rpmClean {
+    group = 'rpm'
+    description = 'Remove synced RPM packages and repo metadata'
+
+    doLast {
+        def pkgDir = file(packagesDir)
+        def repoDir = file('.repo')
+        if (pkgDir.exists()) {
+            delete pkgDir
+            logger.lifecycle("RPM: Removed ${packagesDir}/")
+        }
+        if (repoDir.exists()) {
+            delete repoDir
+            logger.lifecycle("RPM: Removed .repo/")
+        }
+        logger.lifecycle("RPM: Clean complete")
+    }
+}

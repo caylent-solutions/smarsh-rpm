@@ -1,0 +1,8 @@
+.packages/
+.repo/
+__pycache__/
+*.pyc
+.idea/
+*.iml
+.gradle/
+build/

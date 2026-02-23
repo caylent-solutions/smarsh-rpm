@@ -1,0 +1,96 @@
+# How RPM Works
+
+Technical deep-dive into RPM internals. For a high-level overview, see [RPM Guide](rpm-guide.md).
+
+## Bootstrap Flow
+
+The `rpm-bootstrap.gradle` script is the entry point for RPM. It performs two roles:
+
+### Role 1: Package Auto-Discovery (at Gradle evaluation time)
+
+When Gradle evaluates `build.gradle` and reaches `apply from: 'rpm-bootstrap.gradle'`, the bootstrap script:
+
+1. Reads `.rpmenv` to get configuration (package directory, tool versions, URLs)
+2. Checks if `.packages/` exists
+3. If it does, iterates over each subdirectory in `.packages/`
+4. For each package directory:
+   - Sets `project.ext._rpmCurrentPkgDir` to the package's absolute path
+   - Finds all `.gradle` files in the directory (sorted alphabetically)
+   - Applies each `.gradle` file via `apply from:`
+
+This means package scripts execute in the context of the project's build. They can apply plugins, configure tasks, add dependencies, and define new tasks — exactly as if the code were in `build.gradle` itself.
+
+### Role 2: Package Sync (via `rpmConfigure` task)
+
+The `rpmConfigure` Gradle task executes at runtime (not evaluation time). It:
+
+1. **Installs asdf** — A version manager used to install Python without polluting the system
+2. **Installs Python** — Required by the `repo` tool
+3. **Installs the repo tool** — The Caylent fork, installed via `pip`
+4. **Runs `repo init`** — Clones the manifest repo (smarsh-rpm). At this point, `${GITBASE}` placeholders in `remote.xml` are still unresolved
+5. **Runs `repo envsubst`** — Replaces `${GITBASE}` with the actual URL from the `GITBASE` environment variable (sourced from `.rpmenv`)
+6. **Runs `repo sync`** — Clones each package repo listed in `packages.xml` to its `path` (e.g., `.packages/smarsh-rpm-gradle-checkstyle/`)
+7. **Updates `.gitignore`** — Adds `.packages/` and `.repo/` if not already present
+
+## External Plugin Resolution
+
+Some RPM packages need external Gradle plugins that are not part of Gradle's core. For example:
+- `smarsh-rpm-gradle-build` needs `org.springframework.boot` and `io.spring.dependency-management`
+- `smarsh-rpm-gradle-sonarqube` needs `org.sonarqube`
+- `smarsh-rpm-gradle-security` needs `org.owasp.dependencycheck`
+
+These plugins must be on the build classpath **before** `apply from: 'rpm-bootstrap.gradle'` executes (because the package scripts use `apply plugin:`). The project's `build.gradle` handles this with a `buildscript {}` block that reads `rpm-manifest.properties` from each package:
+
+```groovy
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    def packagesDir = file('.packages')
+    if (packagesDir.exists()) {
+        packagesDir.eachDir { pkg ->
+            def manifest = file("${pkg}/rpm-manifest.properties")
+            if (manifest.exists()) {
+                def props = new Properties()
+                manifest.withInputStream { props.load(it) }
+                props.getProperty('buildscript.dependencies', '').split(',')
+                    .findAll { it.trim() }
+                    .each { dep -> dependencies { classpath dep.trim() } }
+            }
+        }
+    }
+}
+```
+
+Core Gradle plugins (java, checkstyle, jacoco) need no `buildscript` entry.
+
+## Package Script Context
+
+Each `.gradle` script applied by the bootstrap has access to:
+
+- `project` — The Gradle project object (same as in `build.gradle`)
+- `project.ext._rpmCurrentPkgDir` — Absolute path to the package directory, so scripts can reference their own config files, templates, etc.
+
+Example from the checkstyle package:
+```groovy
+def PKG_DIR = project.ext.get('_rpmCurrentPkgDir')
+
+apply plugin: 'checkstyle'
+checkstyle {
+    configFile = file("${PKG_DIR}/config/checkstyle/checkstyle.xml")
+    configProperties['config_loc'] = "${PKG_DIR}/config/checkstyle"
+}
+```
+
+## Environment Variable Override
+
+`.rpmenv` values can be overridden by environment variables. The bootstrap script checks `System.getenv()` first, then falls back to the `.rpmenv` property:
+
+```groovy
+def rpmProp = { String key ->
+    System.getenv(key) ?: rpmEnv.getProperty(key)
+}
+```
+
+This enables CI/CD pipelines to override values (e.g., `GITBASE`, `REPO_MANIFESTS_REVISION`) without modifying `.rpmenv`.

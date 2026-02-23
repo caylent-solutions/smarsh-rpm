@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Meta manifest for Java/Gradle/Spring Boot microservice projects.
+    Includes git connection (remote definitions) and package list.
+-->
+<manifest>
+  <include name="repo-specs/git-connection/remote.xml" />
+  <include name="repo-specs/java/gradle/springboot/microservice/packages.xml" />
+</manifest>

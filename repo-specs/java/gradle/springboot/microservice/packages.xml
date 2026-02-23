@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Package definitions for Java/Gradle/Spring Boot microservice projects.
+    Each project maps to an RPM package repo that provides Gradle tasks and configuration.
+    Packages are synced to .packages/ by 'repo sync' and auto-applied by rpm-bootstrap.gradle.
+-->
+<manifest>
+  <project name="smarsh-rpm-gradle-build" path=".packages/smarsh-rpm-gradle-build"
+           remote="smarsh" revision="refs/tags/1.0.0" />
+  <project name="smarsh-rpm-gradle-checkstyle" path=".packages/smarsh-rpm-gradle-checkstyle"
+           remote="smarsh" revision="refs/tags/1.0.0" />
+  <project name="smarsh-rpm-gradle-security" path=".packages/smarsh-rpm-gradle-security"
+           remote="smarsh" revision="refs/tags/1.0.0" />
+  <project name="smarsh-rpm-gradle-unit-test" path=".packages/smarsh-rpm-gradle-unit-test"
+           remote="smarsh" revision="refs/tags/1.0.0" />
+  <project name="smarsh-rpm-gradle-integration-test" path=".packages/smarsh-rpm-gradle-integration-test"
+           remote="smarsh" revision="refs/tags/1.0.0" />
+  <project name="smarsh-rpm-gradle-sonarqube" path=".packages/smarsh-rpm-gradle-sonarqube"
+           remote="smarsh" revision="refs/tags/1.0.0" />
+  <project name="smarsh-rpm-gradle-local-dev" path=".packages/smarsh-rpm-gradle-local-dev"
+           remote="smarsh" revision="refs/tags/1.0.0" />
+</manifest>
