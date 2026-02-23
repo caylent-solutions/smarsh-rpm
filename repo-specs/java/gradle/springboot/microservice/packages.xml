@@ -19,7 +19,7 @@
   <project name="smarsh-rpm-gradle-integration-test" path=".packages/smarsh-rpm-gradle-integration-test"
            remote="smarsh" revision="refs/tags/1.2.0" />
   <project name="smarsh-rpm-gradle-sonarqube" path=".packages/smarsh-rpm-gradle-sonarqube"
-           remote="smarsh" revision="refs/tags/1.2.0" />
+           remote="smarsh" revision="refs/tags/1.3.0" />
   <project name="smarsh-rpm-gradle-local-dev" path=".packages/smarsh-rpm-gradle-local-dev"
            remote="smarsh" revision="refs/tags/1.4.0" />
 </manifest>
