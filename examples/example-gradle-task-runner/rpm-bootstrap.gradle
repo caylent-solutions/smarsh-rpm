@@ -6,6 +6,8 @@
 //   2. rpmConfigure task: installs tooling and syncs packages from manifest repo
 //   3. rpmClean task: removes synced packages and repo metadata
 //
+// Prerequisites: Python 3 and pipx must be available on PATH.
+//
 // Commit this file to your project. It rarely changes.
 // Configuration lives in .rpmenv (Java properties format).
 // ============================================================================
@@ -26,11 +28,6 @@ def rpmProp = { String key ->
 }
 
 def packagesDir = rpmProp('PACKAGES_DIR') ?: '.packages'
-def asdfUrl = rpmProp('ASDF_URL')
-def asdfVersion = rpmProp('ASDF_VERSION')
-def asdfDirPath = rpmProp('ASDF_DIR')?.replace('${HOME}', System.getProperty('user.home'))
-def toolVersionsFile = rpmProp('TOOL_VERSIONS_FILE') ?: '.tool-versions'
-def defaultPythonVersion = rpmProp('DEFAULT_PYTHON_VERSION') ?: '3.12.9'
 def repoUrl = rpmProp('REPO_URL')
 def repoRev = rpmProp('REPO_REV')
 def repoManifestsUrl = rpmProp('REPO_MANIFESTS_URL')
@@ -65,92 +62,71 @@ task rpmConfigure {
     description = 'Install tooling and sync RPM packages from manifest repository'
 
     doLast {
-        // Step 1: Install asdf if not present
-        def asdfDir = file(asdfDirPath)
-        if (!asdfDir.exists()) {
-            logger.lifecycle("RPM: Installing asdf ${asdfVersion}...")
-            exec {
-                commandLine 'git', 'clone', asdfUrl, asdfDirPath, '--branch', asdfVersion
-            }
-        } else {
-            logger.lifecycle("RPM: asdf already installed at ${asdfDirPath}")
+        // Step 1: Verify Python 3 and pipx are available
+        logger.lifecycle("RPM: Checking prerequisites (Python 3, pipx)...")
+        def pythonCheck = ['bash', '-c', 'command -v python3 || command -v python'].execute()
+        pythonCheck.waitFor()
+        if (pythonCheck.exitValue() != 0) {
+            throw new GradleException(
+                "RPM: python3 (or python) is not installed or not on PATH.\n" +
+                "Install Python 3 before running rpmConfigure.\n" +
+                "  - DevContainer: Python is provided by the devcontainer Python feature\n" +
+                "  - CI/CD: Add a Python installation step before running Gradle\n" +
+                "  - Local: Install Python 3 via your system package manager"
+            )
         }
-
-        // Step 2: Ensure .tool-versions has python
-        def tvFile = file(toolVersionsFile)
-        if (!tvFile.exists()) {
-            tvFile.text = "python ${defaultPythonVersion}\n"
-            logger.lifecycle("RPM: Created ${toolVersionsFile} with python ${defaultPythonVersion}")
-        } else if (!tvFile.text.contains('python')) {
-            tvFile.append("\npython ${defaultPythonVersion}\n")
-            logger.lifecycle("RPM: Added python ${defaultPythonVersion} to ${toolVersionsFile}")
+        def pipxCheck = ['bash', '-c', 'command -v pipx'].execute()
+        pipxCheck.waitFor()
+        if (pipxCheck.exitValue() != 0) {
+            throw new GradleException(
+                "RPM: pipx is not installed or not on PATH.\n" +
+                "Install pipx before running rpmConfigure.\n" +
+                "  - DevContainer: pipx is included with the devcontainer Python feature (installTools=true)\n" +
+                "  - pip: python3 -m pip install --user pipx\n" +
+                "  - apt: sudo apt install pipx\n" +
+                "  - brew: brew install pipx\n" +
+                "After installing: pipx ensurepath"
+            )
         }
+        logger.lifecycle("RPM: Python 3 and pipx are available")
 
-        // Step 3: Install asdf plugins and tools
-        logger.lifecycle("RPM: Installing asdf plugins and tools...")
-        exec {
-            commandLine 'bash', '-c', """
-                export ASDF_DIR="${asdfDirPath}"
-                . "\${ASDF_DIR}/asdf.sh"
-                awk '{print \$1}' ${toolVersionsFile} | sort -u | while read plugin; do
-                    if ! asdf plugin list 2>/dev/null | grep -q "^\${plugin}\$"; then
-                        echo "RPM: Installing asdf plugin: \${plugin}"
-                        asdf plugin add \${plugin} || { echo "RPM: Failed to add plugin \${plugin}"; exit 1; }
-                    fi
-                done
-                asdf install || { echo "RPM: Failed to install tools"; exit 1; }
-            """.stripIndent().trim()
-        }
-
-        // Step 4: Install repo tool via pip
+        // Step 2: Install repo tool via pipx
         logger.lifecycle("RPM: Installing repo tool ${repoRev}...")
         exec {
-            commandLine 'bash', '-c', """
-                export ASDF_DIR="${asdfDirPath}"
-                . "\${ASDF_DIR}/asdf.sh"
-                pip install "git+${repoUrl}@${repoRev}" || { echo "RPM: Failed to install repo tool"; exit 1; }
-                asdf reshim python
-            """.stripIndent().trim()
+            commandLine 'bash', '-c',
+                "pipx install --force \"git+${repoUrl}@${repoRev}\" || " +
+                "{ echo 'RPM: Failed to install repo tool via pipx'; exit 1; }"
         }
 
-        // Step 5: repo init (clones manifest repo with ${GITBASE} placeholders intact)
+        // Step 3: repo init (clones manifest repo with ${GITBASE} placeholders intact)
         logger.lifecycle("RPM: Initializing repo from ${repoManifestsUrl}...")
         exec {
-            commandLine 'bash', '-c', """
-                export ASDF_DIR="${asdfDirPath}"
-                . "\${ASDF_DIR}/asdf.sh"
-                echo n | repo --color=never init --no-repo-verify \\
-                    -u "${repoManifestsUrl}" \\
-                    -b "${repoManifestsRevision}" \\
-                    -m "${repoManifestsPath}" \\
-                    --repo-rev="${repoRev}" \\
-                    || { echo "RPM: repo init failed"; exit 1; }
-            """.stripIndent().trim()
+            commandLine 'bash', '-c',
+                "echo n | repo --color=never init --no-repo-verify " +
+                "-u \"${repoManifestsUrl}\" " +
+                "-b \"${repoManifestsRevision}\" " +
+                "-m \"${repoManifestsPath}\" " +
+                "--repo-rev=\"${repoRev}\" " +
+                "|| { echo 'RPM: repo init failed'; exit 1; }"
         }
 
-        // Step 6: repo envsubst (resolves ${GITBASE} from environment)
+        // Step 4: repo envsubst (resolves ${GITBASE} from environment)
         logger.lifecycle("RPM: Running repo envsubst to resolve \${GITBASE}...")
         exec {
             environment 'GITBASE', gitbase
-            commandLine 'bash', '-c', """
-                export ASDF_DIR="${asdfDirPath}"
-                . "\${ASDF_DIR}/asdf.sh"
-                export GITBASE="${gitbase}"
-                repo envsubst || { echo "RPM: repo envsubst failed"; exit 1; }
-            """.stripIndent().trim()
+            commandLine 'bash', '-c',
+                "export GITBASE=\"${gitbase}\" && " +
+                "repo envsubst || { echo 'RPM: repo envsubst failed'; exit 1; }"
         }
 
-        // Step 7: repo sync (clones packages using resolved URLs)
+        // Step 5: repo sync (clones packages using resolved URLs)
         logger.lifecycle("RPM: Syncing packages...")
         exec {
-            commandLine 'bash', '-c', """
-                export ASDF_DIR="${asdfDirPath}"
-                . "\${ASDF_DIR}/asdf.sh"
-                repo sync || { echo "RPM: repo sync failed"; exit 1; }
-            """.stripIndent().trim()
+            commandLine 'bash', '-c',
+                "repo sync || { echo 'RPM: repo sync failed'; exit 1; }"
         }
 
-        // Step 8: Update .gitignore
+        // Step 6: Update .gitignore
         def gitignore = file('.gitignore')
         def gitignoreText = gitignore.exists() ? gitignore.text : ''
         def updated = false

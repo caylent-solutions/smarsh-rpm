@@ -6,9 +6,10 @@ Step-by-step instructions for setting up RPM in new and existing projects.
 
 - Git
 - Bash shell
-- Internet access (to clone asdf, Python, repo tool, and packages)
+- Python 3 with pipx (`command -v python3 && command -v pipx`)
+- Internet access (to install the repo tool and clone packages)
 
-The `rpmConfigure` task installs all other tooling automatically (asdf, Python, repo tool).
+The `rpmConfigure` task installs the repo tool via pipx and syncs all packages.
 
 ## New Project Setup
 
@@ -76,13 +77,20 @@ See [RPM Guide - Section 6](rpm-guide.md#6-how-to-use-rpm-in-an-existing-project
 
 ## Troubleshooting
 
-### `rpmConfigure` fails at "Installing asdf"
+### `rpmConfigure` fails with "python3 is not installed"
 
-Check internet connectivity. asdf is cloned from GitHub.
+Python 3 must be available on PATH before running `rpmConfigure`.
+- **DevContainer:** Python is provided by the devcontainer Python feature.
+- **CI/CD:** Add a Python installation step before running Gradle.
+- **Local:** Install Python 3 via your system package manager.
+
+### `rpmConfigure` fails with "pipx is not installed"
+
+pipx must be available on PATH. Install it with `python3 -m pip install --user pipx && pipx ensurepath`.
 
 ### `rpmConfigure` fails at "Installing repo tool"
 
-The repo tool is installed via `pip`. Ensure Python is available after asdf install completes. Check `.tool-versions` has a `python` entry.
+The repo tool is installed via `pipx`. Ensure pipx is configured correctly and internet access is available.
 
 ### `repo envsubst` fails
 

@@ -16,13 +16,6 @@ GITBASE=https://github.com/caylent-solutions/
 # Pipeline Configuration
 IS_PIPELINE=false
 
-# asdf Configuration
-ASDF_URL=https://github.com/asdf-vm/asdf.git
-ASDF_VERSION=v0.15.0
-ASDF_DIR=${HOME}/.asdf
-TOOL_VERSIONS_FILE=.tool-versions
-DEFAULT_PYTHON_VERSION=3.12.9
-
 # Build Configuration (read by smarsh-rpm-gradle-build)
 JAVA_VERSION=17
 ARTIFACTORY_URL=

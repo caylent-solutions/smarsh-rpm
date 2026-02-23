@@ -69,11 +69,11 @@ When a developer runs `./gradlew rpmConfigure`, the bootstrap script executes th
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│  Install asdf   │────>│  Install Python  │────>│ Install repo tool│
-│  (version mgr)  │     │  (via asdf)      │     │ (fork w/envsubst)│
-└─────────────────┘     └──────────────────┘     └──────────────────┘
-                                                          │
-                                                          v
+│ Verify Python 3  │────>│ Install repo tool│
+│ and pipx on PATH │     │   (via pipx)     │
+└──────────────────┘     └──────────────────┘
+                                  │
+                                  v
 ┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐
 │   repo sync     │<────│  repo envsubst   │<────│   repo init      │
 │ (clone packages │     │ (resolve ${GIT-  │     │ (clone manifest  │

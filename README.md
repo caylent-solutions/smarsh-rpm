@@ -54,7 +54,7 @@ cat .rpmenv | grep REPO_MANIFESTS_PATH
 ./gradlew rpmConfigure
 ```
 
-This automatically installs asdf, Python, and the repo tool. It also syncs all packages to `.packages/` and adds `.packages/` and `.repo/` to `.gitignore`.
+This installs the repo tool (via pipx) and syncs all packages to `.packages/`. It also adds `.packages/` and `.repo/` to `.gitignore`. Requires Python 3 and pipx on PATH.
 
 **Important:** All synced files in `.packages/` and `.repo/` are ephemeral and should not be committed. Only commit your task runner bootstrap files and `.rpmenv` to your repository.
 

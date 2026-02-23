@@ -24,13 +24,12 @@ This means package scripts execute in the context of the project's build. They c
 
 The `rpmConfigure` Gradle task executes at runtime (not evaluation time). It:
 
-1. **Installs asdf** — A version manager used to install Python without polluting the system
-2. **Installs Python** — Required by the `repo` tool
-3. **Installs the repo tool** — The RPM fork (with `envsubst` support), installed via `pip`
-4. **Runs `repo init`** — Clones the manifest repo (smarsh-rpm). At this point, `${GITBASE}` placeholders in `remote.xml` are still unresolved
-5. **Runs `repo envsubst`** — Replaces `${GITBASE}` with the actual URL from the `GITBASE` environment variable (sourced from `.rpmenv`)
-6. **Runs `repo sync`** — Clones each package repo listed in `packages.xml` to its `path` (e.g., `.packages/smarsh-rpm-gradle-checkstyle/`). Also processes `<linkfile>` entries, creating symlinks from package assets to their conventional locations in the project (e.g., `config/checkstyle/checkstyle.xml` → `.packages/smarsh-rpm-gradle-checkstyle/config/checkstyle/checkstyle.xml`)
-7. **Updates `.gitignore`** — Adds `.packages/` and `.repo/` if not already present
+1. **Verifies prerequisites** — Checks that Python 3 and pipx are available on PATH (fails fast with actionable error if not)
+2. **Installs the repo tool** — The RPM fork (with `envsubst` support), installed via `pipx`
+3. **Runs `repo init`** — Clones the manifest repo (smarsh-rpm). At this point, `${GITBASE}` placeholders in `remote.xml` are still unresolved
+4. **Runs `repo envsubst`** — Replaces `${GITBASE}` with the actual URL from the `GITBASE` environment variable (sourced from `.rpmenv`)
+5. **Runs `repo sync`** — Clones each package repo listed in `packages.xml` to its `path` (e.g., `.packages/smarsh-rpm-gradle-checkstyle/`). Also processes `<linkfile>` entries, creating symlinks from package assets to their conventional locations in the project (e.g., `config/checkstyle/checkstyle.xml` → `.packages/smarsh-rpm-gradle-checkstyle/config/checkstyle/checkstyle.xml`)
+6. **Updates `.gitignore`** — Adds `.packages/` and `.repo/` if not already present
 
 ## Symlinks via `<linkfile>`
 
