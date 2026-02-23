@@ -6,7 +6,7 @@
 -->
 <manifest>
   <project name="smarsh-rpm-gradle-build" path=".packages/smarsh-rpm-gradle-build"
-           remote="smarsh" revision="refs/tags/1.2.0" />
+           remote="smarsh" revision="refs/tags/1.3.0" />
   <project name="smarsh-rpm-gradle-checkstyle" path=".packages/smarsh-rpm-gradle-checkstyle"
            remote="smarsh" revision="refs/tags/1.2.0">
     <linkfile src="config/checkstyle/checkstyle.xml" dest="config/checkstyle/checkstyle.xml" />
