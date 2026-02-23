@@ -6,7 +6,7 @@ RPM manifest for Spring Boot microservice projects built with Gradle.
 
 | Package | Purpose |
 |---|---|
-| smarsh-rpm-gradle-build | Java 17, Spring Boot, repos, dependency management |
+| smarsh-rpm-gradle-build | Java compilation, Spring Boot, repos, dependency management |
 | smarsh-rpm-gradle-checkstyle | Google Java Style + Smarsh customizations |
 | smarsh-rpm-gradle-security | OWASP dependency check + TruffleHog |
 | smarsh-rpm-gradle-unit-test | TestNG + JaCoCo coverage |

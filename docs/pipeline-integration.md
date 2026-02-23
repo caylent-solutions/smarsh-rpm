@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '17'  # Must match JAVA_VERSION in .rpmenv
       - name: RPM Configure
         run: ./gradlew rpmConfigure
       - uses: actions/cache/save@v4
