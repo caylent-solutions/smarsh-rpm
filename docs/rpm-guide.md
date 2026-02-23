@@ -135,7 +135,7 @@ smarsh-rpm (this repo)
 |---|---|---|---|
 | [smarsh-rpm-gradle-build](https://github.com/caylent-solutions/smarsh-rpm-gradle-build) | `build`, `bootJar`, `bootBuildInfo` | `build-conventions.gradle`, `rpm-manifest.properties` | Java version, Spring Boot plugin, repos, dependency management, dist task disabling |
 | [smarsh-rpm-gradle-checkstyle](https://github.com/caylent-solutions/smarsh-rpm-gradle-checkstyle) | `checkstyleMain` | `checkstyle.gradle`, `config/checkstyle/checkstyle.xml`, `config/checkstyle/suppressions.xml` | Checkstyle plugin config, checkstyle rules files |
-| [smarsh-rpm-gradle-security](https://github.com/caylent-solutions/smarsh-rpm-gradle-security) | `securityCheck`, `secretScan`, `dependencyCheckAnalyze` | `security.gradle`, `rpm-manifest.properties`, `workflows/secret-scan.yml` | OWASP plugin config, TruffleHog GitHub Actions workflow |
+| [smarsh-rpm-gradle-security](https://github.com/caylent-solutions/smarsh-rpm-gradle-security) | `securityCheck`, `secretScan`, `dependencyCheckAnalyze` | `security.gradle`, `rpm-manifest.properties` | OWASP plugin config, TruffleHog local scanning via Docker |
 | [smarsh-rpm-gradle-unit-test](https://github.com/caylent-solutions/smarsh-rpm-gradle-unit-test) | `test`, `unitTest`, `jacocoTestReport` | `unit-test.gradle` | TestNG config, JaCoCo config, test logging, coverage reporting |
 | [smarsh-rpm-gradle-integration-test](https://github.com/caylent-solutions/smarsh-rpm-gradle-integration-test) | `integrationTest` | `integration-test.gradle` | Integration test source set, configurations, test task |
 | [smarsh-rpm-gradle-sonarqube](https://github.com/caylent-solutions/smarsh-rpm-gradle-sonarqube) | `sonar` | `sonarqube.gradle`, `rpm-manifest.properties` | SonarQube plugin config |
@@ -258,7 +258,7 @@ rpm.artifactory.url=https://your-company.jfrog.io/libs-release-local
 8. **Java version** — `sourceCompatibility`/`targetCompatibility`
 9. **Dist task disabling** — `tasks.distTar.enabled = false`
 10. **Local dev tasks** — All Docker Compose management tasks and helpers
-11. **Security workflows** — `.github/workflows/main.yml` (TruffleHog) — replaced by package template
+11. **Security scanning config** — OWASP and TruffleHog Gradle task config (note: `.github/workflows/` files must stay in the project — GitHub Actions only reads from that path)
 
 ### What to Keep
 

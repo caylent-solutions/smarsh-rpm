@@ -3,7 +3,7 @@
 
 # RPM Manifest Repository
 REPO_MANIFESTS_URL=https://github.com/caylent-solutions/smarsh-rpm.git
-REPO_MANIFESTS_REVISION=refs/tags/1.0.0
+REPO_MANIFESTS_REVISION=refs/tags/1.1.0
 REPO_MANIFESTS_PATH=repo-specs/java/gradle/springboot/microservice/meta.xml
 
 # Repo Tool (Caylent fork with envsubst support)
