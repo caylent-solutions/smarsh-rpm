@@ -178,6 +178,15 @@ Set `GITBASE` to the GitHub organization hosting the packages:
 GITBASE=https://github.com/caylent-solutions/
 ```
 
+Set build configuration:
+```properties
+# Java source/target version
+JAVA_VERSION=17
+
+# Optional private Maven repository URL (leave empty if not needed)
+ARTIFACTORY_URL=https://your-company.jfrog.io/libs-release-local
+```
+
 ### Step 3: Customize `build.gradle`
 
 Keep only project-specific configuration:

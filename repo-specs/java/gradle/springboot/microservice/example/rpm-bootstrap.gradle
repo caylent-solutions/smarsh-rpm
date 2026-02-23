@@ -38,6 +38,10 @@ def repoManifestsRevision = rpmProp('REPO_MANIFESTS_REVISION')
 def repoManifestsPath = rpmProp('REPO_MANIFESTS_PATH')
 def gitbase = rpmProp('GITBASE')
 
+// Expose rpmProp to package scripts so they can read .rpmenv values
+// Usage in packages: def rpmProp = project.ext.get('_rpmProp')
+project.ext.set('_rpmProp', rpmProp)
+
 // ---------------------------------------------------------------------------
 // 2. Auto-discover and apply package scripts from .packages/
 // ---------------------------------------------------------------------------

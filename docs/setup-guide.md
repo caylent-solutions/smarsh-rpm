@@ -32,7 +32,15 @@ REPO_MANIFESTS_PATH=repo-specs/java/gradle/springboot/microservice/meta.xml
 
 # Set the Git base URL where packages are hosted
 GITBASE=https://github.com/caylent-solutions/
+
+# Java source/target version
+JAVA_VERSION=17
+
+# Optional private Maven repository URL (leave empty if not needed)
+ARTIFACTORY_URL=https://your-company.jfrog.io/libs-release-local
 ```
+
+All `.rpmenv` values can be overridden by environment variables of the same name (useful for CI/CD pipelines).
 
 ### 3. Customize `build.gradle`
 

@@ -23,5 +23,9 @@ ASDF_DIR=${HOME}/.asdf
 TOOL_VERSIONS_FILE=.tool-versions
 DEFAULT_PYTHON_VERSION=3.12.9
 
+# Build Configuration (read by smarsh-rpm-gradle-build)
+JAVA_VERSION=17
+ARTIFACTORY_URL=
+
 # Package Directory
 PACKAGES_DIR=.packages
