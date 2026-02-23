@@ -31,11 +31,17 @@ Organizations have quality automation scattered across teams — build conventio
 
 Copy the task runner files from your chosen manifest's `example/` directory.
 
-**For Gradle/Spring Boot Microservices:**
+**For Gradle projects:**
 ```bash
 curl -O https://raw.githubusercontent.com/caylent-solutions/smarsh-rpm/main/examples/example-gradle-task-runner/.rpmenv
 curl -O https://raw.githubusercontent.com/caylent-solutions/smarsh-rpm/main/examples/example-gradle-task-runner/rpm-bootstrap.gradle
 curl -O https://raw.githubusercontent.com/caylent-solutions/smarsh-rpm/main/examples/example-gradle-task-runner/build.gradle
+```
+
+**For Make projects:**
+```bash
+curl -O https://raw.githubusercontent.com/caylent-solutions/smarsh-rpm/main/examples/example-make-task-runner/.rpmenv
+curl -O https://raw.githubusercontent.com/caylent-solutions/smarsh-rpm/main/examples/example-make-task-runner/Makefile
 ```
 
 The `.rpmenv` file is pre-configured with the correct manifest path for that ecosystem.
@@ -50,8 +56,14 @@ cat .rpmenv | grep REPO_MANIFESTS_PATH
 
 ### 3. Configure
 
+**Gradle:**
 ```bash
 ./gradlew rpmConfigure
+```
+
+**Make:**
+```bash
+make rpm-configure
 ```
 
 This installs the repo tool (via pipx) and syncs all packages to `.packages/`. It also adds `.packages/` and `.repo/` to `.gitignore`. Requires Python 3 and pipx on PATH.
@@ -62,13 +74,19 @@ This installs the repo tool (via pipx) and syncs all packages to `.packages/`. I
 
 RPM is **tool agnostic** — it works with any task runner or build system. Each manifest provides different artifacts (automation tasks, dependencies, configurations, or code assets) tailored to your ecosystem.
 
-**Gradle-based projects:**
+**Gradle projects:**
 ```bash
 ./gradlew tasks      # See all available tasks
 ./gradlew build      # Run build with RPM-provided conventions
 ```
 
-RPM's orchestration pattern adapts to your workflow. Current examples use Gradle, but the architecture supports Make, npm, Maven, and any other task runner.
+**Make projects:**
+```bash
+make help            # See all available targets
+make rpm-configure   # Sync RPM packages
+```
+
+RPM's orchestration pattern adapts to your workflow. The architecture supports Make, Gradle, npm, Maven, and any other task runner.
 
 **[Full Setup Guide ->](docs/setup-guide.md)**
 

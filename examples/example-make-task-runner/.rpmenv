@@ -1,0 +1,21 @@
+# RPM Configuration
+# Environment variables override these defaults (for pipeline integration)
+# This file uses Make ?= syntax so environment variables take precedence.
+
+# RPM Manifest Repository
+REPO_MANIFESTS_URL ?= https://github.com/caylent-solutions/smarsh-rpm.git
+REPO_MANIFESTS_REVISION ?= refs/tags/1.5.0
+REPO_MANIFESTS_PATH ?= repo-specs/java/gradle/springboot/microservice/meta.xml
+
+# Repo Tool (fork with envsubst support)
+REPO_URL ?= https://github.com/caylent-solutions/git-repo.git
+REPO_REV ?= caylent-0.1.2
+
+# Git Base URL for packages (resolved by 'repo envsubst' in remote.xml)
+GITBASE ?= https://github.com/caylent-solutions/
+
+# Pipeline Configuration
+IS_PIPELINE ?= false
+
+# Package Directory
+PACKAGES_DIR ?= .packages
